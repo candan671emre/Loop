@@ -8,24 +8,34 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true   # Submodule'leri otomatik indir
 
-    - name: Set up Xcode
-      run: sudo xcode-select -s /Applications/Xcode_15.0.app
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.0.app
 
-    - name: Build Loop App
-      run: |
-        xcodebuild -workspace Loop.xcworkspace -scheme Loop -configuration Release -derivedDataPath build
+      - name: Update submodules (extra safety)
+        run: git submodule update --init --recursive
 
-    - name: Package IPA
-      run: |
-        mkdir Payload
-        cp -r build/Build/Products/Release-iphoneos/Loop.app Payload/
-        zip -r Loop.ipa Payload
+      - name: Build Loop App
+        run: |
+          cd Loop
+          xcodebuild -workspace Loop.xcworkspace \
+            -scheme Loop \
+            -configuration Release \
+            -derivedDataPath build
 
-    - name: Upload IPA
-      uses: actions/upload-artifact@v4
-      with:
-        name: Loop
-        path: Loop.ipa
+      - name: Package IPA
+        run: |
+          cd Loop
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/Loop.app Payload/
+          zip -r Loop.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Loop
+          path: Loop/Loop.ipa
